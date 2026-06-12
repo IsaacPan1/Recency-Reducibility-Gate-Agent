@@ -1,0 +1,132 @@
+{
+  "standardized_mean_shift": [
+    {
+      "name": "identical",
+      "result": 0.0
+    },
+    {
+      "name": "too_few_left",
+      "result": "NaN"
+    },
+    {
+      "name": "hand_case",
+      "result": 1.414213562373095
+    },
+    {
+      "name": "normal",
+      "result": 3.3337846245116918
+    }
+  ],
+  "drift_diagnostic": {
+    "ok": true,
+    "n_features_scanned": 6,
+    "rank_max": 24,
+    "recent_periods": 14,
+    "recent_cutoff_rank": 11,
+    "mean_dist_full": 0.7108236780661336,
+    "mean_dist_recent": 0.2732312353633164,
+    "mean_improvement": 0.43759244270281733,
+    "rel": 0.6156132050824912,
+    "frac_improved": 0.5,
+    "per_feature": [
+      {
+        "feature": "f0",
+        "dist_full": 1.150772754809879,
+        "dist_recent": 0.20689047035382516,
+        "improvement": 0.9438822844560538
+      },
+      {
+        "feature": "f1",
+        "dist_full": 1.195153949489346,
+        "dist_recent": 0.20366814080910964,
+        "improvement": 0.9914858086802363
+      },
+      {
+        "feature": "f2",
+        "dist_full": 1.1474955662625623,
+        "dist_recent": 0.14476312870361216,
+        "improvement": 1.0027324375589501
+      },
+      {
+        "feature": "f3",
+        "dist_full": 0.36267876528298787,
+        "dist_recent": 0.5070650019919708,
+        "improvement": -0.14438623670898293
+      },
+      {
+        "feature": "f4",
+        "dist_full": 0.3443050367764483,
+        "dist_recent": 0.5355938673939574,
+        "improvement": -0.19128883061750912
+      },
+      {
+        "feature": "f5",
+        "dist_full": 0.06453599577557909,
+        "dist_recent": 0.041406802927423034,
+        "improvement": 0.023129192848156052
+      }
+    ]
+  },
+  "decide_scheme": [
+    {
+      "name": "award_A",
+      "result": {
+        "scheme": "expanding",
+        "reason": "expanding (conservative default; sliding not affirmatively justified \u2014 insufficient features to assess drift breadth (n_features=9 < 12); frac_improved=0.556 < 0.6 (primary gate))",
+        "gates": {
+          "frac_ok": false,
+          "rel_ok": true,
+          "nfeat_ok": false
+        }
+      }
+    },
+    {
+      "name": "retail_sales",
+      "result": {
+        "scheme": "expanding",
+        "reason": "expanding (conservative default; sliding not affirmatively justified \u2014 insufficient features to assess drift breadth (n_features=5 < 12); frac_improved=0.200 < 0.6 (primary gate); rel=0.022 < 0.25 (secondary gate))",
+        "gates": {
+          "frac_ok": false,
+          "rel_ok": false,
+          "nfeat_ok": false
+        }
+      }
+    },
+    {
+      "name": "energy_load",
+      "result": {
+        "scheme": "expanding",
+        "reason": "expanding (conservative default; sliding not affirmatively justified \u2014 insufficient features to assess drift breadth (n_features=4 < 12); frac_improved=0.500 < 0.6 (primary gate); rel=-0.514 < 0.25 (secondary gate))",
+        "gates": {
+          "frac_ok": false,
+          "rel_ok": false,
+          "nfeat_ok": false
+        }
+      }
+    },
+    {
+      "name": "synthetic_sliding",
+      "result": {
+        "scheme": "sliding",
+        "reason": "sliding (drift is recency-reducible AND evidence is broad enough: frac_improved=0.750 >= 0.6 AND rel=0.400 >= 0.25 AND n_features=20 >= 12)",
+        "gates": {
+          "frac_ok": true,
+          "rel_ok": true,
+          "nfeat_ok": true
+        }
+      }
+    },
+    {
+      "name": "fallback_not_ok",
+      "result": {
+        "scheme": "expanding",
+        "reason": "expanding (fallback \u2014 drift diagnostic could not run: no numeric rank could be derived)",
+        "gates": {
+          "frac_ok": false,
+          "rel_ok": false,
+          "nfeat_ok": false
+        }
+      }
+    }
+  ]
+}
