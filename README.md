@@ -127,6 +127,38 @@ scenario in the screenshot above (AUC 0.90).
 
 ## 5. Install and usage
 
+### Quickstart (30 seconds)
+
+```bash
+# 1. clone and install (pip pulls numpy + pandas from pyproject.toml — no extra step)
+git clone https://github.com/IsaacPan1/Recency-Reducibility-Gate-Agent.git
+cd Recency-Reducibility-Gate-Agent
+pip install -e .
+
+# 2. run it on the bundled example data (works immediately, no data needed)
+python examples/run_on_csv.py tests/fixtures/covariates_train.csv tests/fixtures/covariates_val.csv --time-col week
+
+# 3. run it on YOUR data — pass your train and validation CSV paths explicitly,
+#    and name your time/period column (and --target if your data has one)
+python examples/run_on_csv.py path/to/your_train.csv path/to/your_val.csv --time-col your_time_column
+```
+
+Step 2 prints — this is what success looks like:
+
+```text
+scheme : EXPANDING
+reason : expanding (conservative default; sliding not affirmatively justified - insufficient features to assess drift breadth (n_features=5 < 12); frac_improved=0.200 < 0.6 (primary gate); rel=0.023 < 0.25 (secondary gate))
+frac   : 0.20  (breadth gate)
+rel    : 0.02  (depth gate)
+n      : 5  (evidence floor)
+```
+
+The CLI takes file **paths** as arguments — it does not watch a directory or auto-detect files in a
+folder, so always pass the train and val CSV paths explicitly. On Windows, if `pip install -e .` hits
+permissions, create a venv first: `python -m venv .venv; .venv\Scripts\activate`.
+
+### Install only
+
 ```bash
 pip install -e .
 ```
