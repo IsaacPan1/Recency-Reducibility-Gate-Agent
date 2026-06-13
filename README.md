@@ -7,12 +7,13 @@ merely whether train and validation look different.
 
 ![Boundary-shift foil: naive separability says SLIDING at AUC 0.90, the gate holds EXPANDING at frac 0.33](demo/screenshot.png)
 
-*The foil at its sharpest, on the synthetic **boundary-shift** preset: the naive adversarial-AUC test is
-confidently wrong (mean AUC **0.90**) and votes **SLIDING**, but the shift sits at the train/validation
-boundary where the recent window can't reach it — `mean_improvement = 0.00`, so `frac_improved = 0.33`
-and `rel = 0.00` across all `n = 15` features — and the gate correctly holds **EXPANDING**. Unlike the
-thin-evidence floor, here both the breadth and depth gates fail because recency genuinely doesn't help,
-not because the scan is too thin.*
+*The foil at its sharpest. The screenshot shows one of the simulator's built-in scenarios, "boundary
+shift," where the drift is placed exactly at the train/validation boundary — a prebuilt preset, not a
+tuned or cherry-picked example. The naive adversarial-AUC test is confidently wrong (mean AUC **0.90**)
+and votes **SLIDING**, but because the shift sits at the boundary the recent window can't reach it —
+`mean_improvement = 0.00`, so `frac_improved = 0.33` and `rel = 0.00` across all `n = 15` features — and
+the gate correctly holds **EXPANDING**. Unlike the thin-evidence floor, here both the breadth and depth
+gates fail because recency genuinely doesn't help, not because the scan is too thin.*
 
 **▶ Try it live:** <https://isaacpan1.github.io/Recency-Reducibility-Gate-Agent/demo/index.html>
 
@@ -41,10 +42,11 @@ drift exists. So an adversarial AUC (or a KS statistic) saturates near its maxim
 every forecasting set, whether or not recency would actually help. A gate built on separability
 therefore recommends sliding almost always — discarding history for no measurable gain.
 
-The live demo makes this concrete. On the bundled 135k-row retail panel, the adversarial separability
-test reports a mean AUC of **≈0.63** (well above its 0.55 "slide" threshold) and votes SLIDING — yet
-restricting to the recent window does nothing to bring the covariates closer to validation, so sliding
-would throw away history for nothing.
+The live demo makes this concrete. On a large synthetic panel built to exercise the gate — 135,000 rows
+of many series tracked over weeks, in a retail-style `stores × products × weeks` layout — the
+adversarial separability test reports a mean AUC of **≈0.62** (well above its 0.55 "slide" threshold)
+and votes SLIDING, yet restricting to the recent window does nothing to bring the covariates closer to
+validation, so sliding would throw away history for nothing.
 
 ## 3. The contribution — the gate's extra checks
 
@@ -80,7 +82,7 @@ covariate's `dist_full`, `dist_recent`, and `improvement`, so you can see precis
 become closer under recency. Engineered seasonality / time-index columns (`_WINDOW_FEATURES`) and
 `adversarial_weights` are excluded from the scan by name because they encode "validation is the
 future" rather than reducible drift, and the validation **target is never read**. A plain time index
-that slips through unnamed is not a problem either: on the retail panel the `week` column is scanned
+that slips through unnamed is not a problem either: in that panel the `week` column is scanned
 but its improvement is **−0.72** — restricting to recent weeks does not pull the monotone period
 column toward validation, so it never counts toward `frac_improved`. The gate is not fooled by it.
 
@@ -112,12 +114,16 @@ the demo samples **whole time series** — group-level, every period of each kep
 and discloses it honestly ("Sampled N of M rows"), never silently and never as a failure. If
 validation has no target column, the OLS strip **hides** behind a note rather than fabricating a number.
 
-**Real-data demonstration.** The retail upload bundled under `tests/fixtures/` (135,000 train / 15,000
-validation rows; columns `store_id, product_id, week, price, promotion_active, holiday_flag,
-weather_index`; no target) is the foil on genuine-shaped data. The gate computes **EXPANDING** with
-`frac_improved = 0.20`, `rel ≈ 0.02`, and `n = 5` scanned features (`store_id`/`product_id` excluded
-as non-numeric; only `weather_index` moves closer under recency), while the naive separability test
-flags a shift at mean AUC **≈0.63** and would slide. The gate correctly keeps all history.
+**A worked example at scale.** Bundled under `tests/fixtures/` is a large synthetic panel generated to
+exercise the gate — 135,000 training and 15,000 validation rows of many series tracked over time, in a
+retail-style `stores × products × weeks` layout (columns `store_id, product_id, week, price,
+promotion_active, holiday_flag, weather_index`; no target). Run through the upload path, it shows the
+foil at scale: the naive separability test flags a clear shift (mean AUC **≈0.62**) and would slide,
+but the gate correctly holds **EXPANDING** with `frac_improved = 0.20`, `rel ≈ 0.02`, and `n = 5`
+scanned features (`store_id`/`product_id` excluded as non-numeric; only `weather_index` moves closer
+under recency) — restricting to recent weeks doesn't pull the covariates closer to validation. It is an
+illustrative synthetic example, not a standard benchmark, and is distinct from the in-app boundary-shift
+scenario in the screenshot above (AUC 0.90).
 
 ## 5. Install and usage
 
