@@ -5,13 +5,14 @@ window by detecting whether train→validation drift is *recency-reducible* — 
 training to its most recent block actually moves the covariates closer to validation — rather than
 merely whether train and validation look different.
 
-![The foil: the naive separability test says SLIDING, the gate says EXPANDING](demo/screenshot.png)
+![Boundary-shift foil: naive separability says SLIDING at AUC 0.90, the gate holds EXPANDING at frac 0.33](demo/screenshot.png)
 
-*The thin-evidence floor in action. The naive adversarial-AUC test saturates (mean AUC 0.71) and votes
-**SLIDING**, and here recency genuinely does narrow the gap — breadth (`frac_improved = 1.00`) and depth
-(`rel = 0.79`) both clear. But only **9 features** are scanned, below the `n ≥ 12` evidence floor, so that
-third, independent gate holds the verdict at **EXPANDING**: the gate won't slide on thin evidence even
-when the other two conditions pass.*
+*The foil at its sharpest, on the synthetic **boundary-shift** preset: the naive adversarial-AUC test is
+confidently wrong (mean AUC **0.90**) and votes **SLIDING**, but the shift sits at the train/validation
+boundary where the recent window can't reach it — `mean_improvement = 0.00`, so `frac_improved = 0.33`
+and `rel = 0.00` across all `n = 15` features — and the gate correctly holds **EXPANDING**. Unlike the
+thin-evidence floor, here both the breadth and depth gates fail because recency genuinely doesn't help,
+not because the scan is too thin.*
 
 **▶ Try it live:** <https://isaacpan1.github.io/Recency-Reducibility-Gate-Agent/demo/index.html>
 
