@@ -7,9 +7,11 @@ merely whether train and validation look different.
 
 ![The foil: the naive separability test says SLIDING, the gate says EXPANDING](demo/screenshot.png)
 
-*The same dataset read by two detectors. The naive adversarial-AUC separability test saturates and
-recommends **SLIDING**; the recency-reducibility gate checks whether recency actually helps, finds it
-does not, and holds **EXPANDING**.*
+*The thin-evidence floor in action. The naive adversarial-AUC test saturates (mean AUC 0.71) and votes
+**SLIDING**, and here recency genuinely does narrow the gap — breadth (`frac_improved = 1.00`) and depth
+(`rel = 0.79`) both clear. But only **9 features** are scanned, below the `n ≥ 12` evidence floor, so that
+third, independent gate holds the verdict at **EXPANDING**: the gate won't slide on thin evidence even
+when the other two conditions pass.*
 
 **▶ Try it live:** <https://isaacpan1.github.io/Recency-Reducibility-Gate-Agent/demo/index.html>
 
