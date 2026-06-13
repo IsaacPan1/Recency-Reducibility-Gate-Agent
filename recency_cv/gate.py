@@ -187,7 +187,7 @@ def decide_scheme(diagnostic: dict) -> dict:
         return {
             "scheme": "expanding",
             "reason": (
-                f"expanding (fallback — drift diagnostic could not run: "
+                f"expanding (fallback - drift diagnostic could not run: "
                 f"{diagnostic.get('reason', 'unknown')})"
             ),
             "gates": {"frac_ok": False, "rel_ok": False, "nfeat_ok": False},
@@ -225,7 +225,7 @@ def decide_scheme(diagnostic: dict) -> dict:
             f"rel={rel:.3f} < {DRIFT_REL_THRESHOLD} (secondary gate)"
         )
     reason = (
-        "expanding (conservative default; sliding not affirmatively justified — "
+        "expanding (conservative default; sliding not affirmatively justified - "
         + "; ".join(fails)
         + ")"
     )

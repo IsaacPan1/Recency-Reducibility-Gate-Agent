@@ -149,6 +149,47 @@ The public API is exactly three functions (`recency_cv/__init__.py`): `standardi
 `decide_scheme(diagnostic)`. `drift_diagnostic` returns a dict carrying `ok`, `frac_improved`, `rel`,
 `n_features_scanned`, and the `per_feature` breakdown; `decide_scheme` returns `{scheme, reason, gates}`.
 
+### Using it in your pipeline
+
+The verdict is a string you branch on to shape the training set *before* you fit. The gate reads only
+shared numeric covariates and never the target, so it is safe to call before any model exists:
+
+```python
+from recency_cv import drift_diagnostic, decide_scheme
+
+diagnostic = drift_diagnostic(train_df, val_df, "week")   # reads covariates only — never the target
+scheme = decide_scheme(diagnostic)["scheme"]
+
+if scheme == "sliding":
+    # recency-reducible drift: keep only the most recent block of history
+    cutoff = train_df["week"].max() - 14 + 1            # last RECENT_PERIODS=14 periods
+    fit_df = train_df[train_df["week"] >= cutoff]
+else:  # "expanding" (the conservative default)
+    fit_df = train_df                                   # train on all history
+
+model.fit(fit_df[features], fit_df[target])             # fit_df is now window-shaped by the gate
+```
+
+For a no-import adoption path, point the bundled CLI at two CSVs — it loads them, runs the gate, and
+prints the verdict with the three gate values:
+
+```bash
+python examples/run_on_csv.py train.csv val.csv --time-col week [--target sales]
+```
+
+```text
+$ python examples/run_on_csv.py \
+      tests/fixtures/covariates_train.csv tests/fixtures/covariates_val.csv --time-col week
+scheme : EXPANDING
+reason : expanding (conservative default; sliding not affirmatively justified — ...)
+frac   : 0.20  (breadth gate)
+rel    : 0.02  (depth gate)
+n      : 5  (evidence floor)
+```
+
+`--target` names a column to keep out of the scan explicitly (the gate already ignores it); the
+verdict and `frac`/`rel`/`n` are the same three numbers the gate decides on.
+
 ## 6. Verified Python ↔ JavaScript parity
 
 The browser demo and the Python module run the **same** algorithm, and that is proven, not asserted.
@@ -176,8 +217,8 @@ the JS parity harness runs in the browser.)
   browser data path).
 - **`parity/`** — the cross-language source of truth: `fixture_inputs.json`, `expected.json`, and
   `make_fixture.py` that regenerates them.
-- **`examples/`** — placeholder for standalone example data; the runnable example CSVs ship under
-  `demo/examples/`.
+- **`examples/`** — `run_on_csv.py`, the no-import CLI that runs the gate on two CSVs; the runnable
+  example CSVs ship under `demo/examples/`.
 
 ## 8. Limitations
 

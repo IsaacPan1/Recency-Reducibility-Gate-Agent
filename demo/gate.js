@@ -174,7 +174,7 @@ export function decideScheme(diagnostic) {
     const reason = diagnostic && diagnostic.reason !== undefined ? diagnostic.reason : "unknown";
     return {
       scheme: "expanding",
-      reason: `expanding (fallback — drift diagnostic could not run: ${reason})`,
+      reason: `expanding (fallback - drift diagnostic could not run: ${reason})`,
       gates: { frac_ok: false, rel_ok: false, nfeat_ok: false },
     };
   }
@@ -210,7 +210,7 @@ export function decideScheme(diagnostic) {
     fails.push(`rel=${fmt3(rel)} < ${DRIFT_REL_THRESHOLD} (secondary gate)`);
   }
   const reason =
-    "expanding (conservative default; sliding not affirmatively justified — " +
+    "expanding (conservative default; sliding not affirmatively justified - " +
     fails.join("; ") +
     ")";
   return { scheme: "expanding", reason, gates };

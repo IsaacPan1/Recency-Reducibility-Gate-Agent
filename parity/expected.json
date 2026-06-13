@@ -72,7 +72,7 @@
       "name": "award_A",
       "result": {
         "scheme": "expanding",
-        "reason": "expanding (conservative default; sliding not affirmatively justified \u2014 insufficient features to assess drift breadth (n_features=9 < 12); frac_improved=0.556 < 0.6 (primary gate))",
+        "reason": "expanding (conservative default; sliding not affirmatively justified - insufficient features to assess drift breadth (n_features=9 < 12); frac_improved=0.556 < 0.6 (primary gate))",
         "gates": {
           "frac_ok": false,
           "rel_ok": true,
@@ -84,7 +84,7 @@
       "name": "retail_sales",
       "result": {
         "scheme": "expanding",
-        "reason": "expanding (conservative default; sliding not affirmatively justified \u2014 insufficient features to assess drift breadth (n_features=5 < 12); frac_improved=0.200 < 0.6 (primary gate); rel=0.022 < 0.25 (secondary gate))",
+        "reason": "expanding (conservative default; sliding not affirmatively justified - insufficient features to assess drift breadth (n_features=5 < 12); frac_improved=0.200 < 0.6 (primary gate); rel=0.022 < 0.25 (secondary gate))",
         "gates": {
           "frac_ok": false,
           "rel_ok": false,
@@ -96,7 +96,7 @@
       "name": "energy_load",
       "result": {
         "scheme": "expanding",
-        "reason": "expanding (conservative default; sliding not affirmatively justified \u2014 insufficient features to assess drift breadth (n_features=4 < 12); frac_improved=0.500 < 0.6 (primary gate); rel=-0.514 < 0.25 (secondary gate))",
+        "reason": "expanding (conservative default; sliding not affirmatively justified - insufficient features to assess drift breadth (n_features=4 < 12); frac_improved=0.500 < 0.6 (primary gate); rel=-0.514 < 0.25 (secondary gate))",
         "gates": {
           "frac_ok": false,
           "rel_ok": false,
@@ -120,7 +120,7 @@
       "name": "fallback_not_ok",
       "result": {
         "scheme": "expanding",
-        "reason": "expanding (fallback \u2014 drift diagnostic could not run: no numeric rank could be derived)",
+        "reason": "expanding (fallback - drift diagnostic could not run: no numeric rank could be derived)",
         "gates": {
           "frac_ok": false,
           "rel_ok": false,
