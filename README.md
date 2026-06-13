@@ -15,7 +15,8 @@ and votes **SLIDING**, but because the shift sits at the boundary the recent win
 the gate correctly holds **EXPANDING**. Unlike the thin-evidence floor, here both the breadth and depth
 gates fail because recency genuinely doesn't help, not because the scan is too thin.*
 
-**▶ Try it live:** <https://isaacpan1.github.io/Recency-Reducibility-Gate/demo/index.html>
+- **▶ Try it live:** <https://isaacpan1.github.io/Recency-Reducibility-Gate/demo/index.html>
+- **🎥 Watch the walkthrough (video):** <https://youtu.be/_LKXguh5s0o> — a short walkthrough of how to use the demo
 
 ---
 
