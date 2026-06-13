@@ -131,34 +131,78 @@ export function numericColsInBoth(trainRows, valRows, drop = []) {
   );
 }
 
-// time = first column whose name looks temporal, else the only monotonic-ish
-// integer column, else the first column.
+// Name hint for a time axis — a TIEBREAKER between columns that already behave
+// like one, never the primary signal.
+const TIME_NAME = /week|time|date|period|t$/i;
+
+// Name hint for an outcome — matched on whole tokens (bounded by start/underscore/
+// end) so "holiday_flag" does NOT trip on the stray letter y, and "weather_index"
+// is never mistaken for a target.
+const TARGET_NAME = /(^|_)(target|y|label|outcome|sales|units?|demand|count|qty|revenue)(_|$)/i;
+
+// Guess the time/period column for the dropdown DEFAULT (user-overridable).
+//
+// A time axis is a NUMERIC, integer-valued column that behaves like one — either
+//   • a dense multi-level integer range that repeats across the panel (week
+//     0..89 per store×product: distinct values cover a contiguous range), or
+//   • a monotonic integer (a single flat series / inner sort key).
+// Never a string ID (store_id) and never a continuous float (price). Among the
+// columns that genuinely behave like an axis, the name hint breaks the tie — so
+// on a sorted panel where both `period` and a numeric `region` look axis-like,
+// `period` wins by name, but a clearly-time numeric column with no matching name
+// still beats a name-matched column that does NOT behave like an axis.
 export function guessTimeCol(rows) {
   if (!rows.length) return "";
   const cols = Object.keys(rows[0]);
-  const byName = cols.find((c) => /period|time|date|t$/i.test(c));
-  if (byName) return byName;
-  const monoInts = cols.filter((c) => {
-    let prev = -Infinity;
-    let saw = false;
+  const stats = [];
+  for (const c of cols) {
+    if (!isNumericCol(rows, c)) continue;               // never a string ID
+    let prev = null, steps = 0, asc = 0, n = 0, min = Infinity, max = -Infinity, allInt = true;
+    const seen = new Set();
     for (const r of rows) {
       const v = r[c];
       if (v === "" || v === null || v === undefined) continue;
-      if (typeof v !== "number" || !Number.isInteger(v)) return false;
-      if (v < prev) return false;
+      if (typeof v !== "number" || !Number.isInteger(v)) { allInt = false; break; }
+      n++; seen.add(v);
+      if (v < min) min = v;
+      if (v > max) max = v;
+      if (prev !== null) { steps++; if (v > prev) asc++; }
       prev = v;
-      saw = true;
     }
-    return saw;
-  });
-  if (monoInts.length === 1) return monoInts[0];
-  return cols[0] || "";
+    if (!allInt || n === 0) continue;                   // skip floats (price/weather_index)
+    const D = seen.size;
+    const ascFrac = steps ? asc / steps : 0;
+    const dense = D >= 3 && D / (max - min + 1) >= 0.7; // multi-level repeating axis (excludes 0/1 flags)
+    const monotonic = ascFrac >= 0.6;                   // flat series / inner sort key
+    stats.push({ c, D, n, ascFrac, dense, monotonic, nameHit: TIME_NAME.test(c) });
+  }
+  // Columns that genuinely behave like a time axis.
+  const axes = stats.filter((s) => s.dense || s.monotonic);
+  const rank = (s) =>
+    (s.nameHit ? 1000 : 0) +        // name = tiebreaker AMONG real axes only
+    s.ascFrac * 10 +                // prefer the one that ascends most cleanly
+    (1 - s.D / s.n) * 5;            // prefer the more repeating (lower-cardinality) axis
+  if (axes.length) return axes.sort((a, b) => rank(b) - rank(a))[0].c;
+  // Fallbacks (degenerate inputs): a name-hinted numeric column, else the best-
+  // ascending integer, else the first numeric column, else the first column.
+  const named = cols.find((c) => TIME_NAME.test(c) && isNumericCol(rows, c));
+  if (named) return named;
+  if (stats.length) return stats.sort((a, b) => b.ascFrac - a.ascFrac)[0].c;
+  const anyNum = cols.find((c) => isNumericCol(rows, c));
+  return anyNum || cols[0] || "";
 }
 
-// target = a column named like a target, present in train.
+// Guess the target column for the dropdown DEFAULT (user-overridable). Only a
+// column whose NAME signals an outcome is proposed; absent any such column the
+// default is "" → the UI's "(none)" option, rather than forcing a covariate
+// (holiday_flag, weather_index) into the target slot. Prefer a numeric match (a
+// regression target), else the first name match.
 export function guessTargetCol(rows) {
   if (!rows.length) return "";
-  return Object.keys(rows[0]).find((c) => /target|y|label/i.test(c)) || "";
+  const cols = Object.keys(rows[0]);
+  const matches = cols.filter((c) => TARGET_NAME.test(c));
+  if (!matches.length) return "";                       // → "(none)"
+  return matches.find((c) => isNumericCol(rows, c)) || matches[0];
 }
 
 // Align validation ground-truth target onto valRows. If val itself carries the

@@ -30,13 +30,20 @@ const banner = (t) => console.log("\n" + "=".repeat(80) + "\n" + t + "\n" + "=".
 // ── load the real retail fixtures (the BYO upload) ──
 const train = parseCSV(readHere("covariates_train.csv")).rows;
 const val = parseCSV(readHere("covariates_val.csv")).rows;
-const timeCol = "week";   // the period column for this schema
-const targetCol = "";     // NO target — covariates only ("(none)" in the UI)
 console.log(`Loaded covariates_train.csv (${train.length} rows) + covariates_val.csv (${val.length} rows)`);
 console.log(`columns: [${parseCSV(readHere("covariates_train.csv")).header.join(", ")}]`);
-console.log(`guessTimeCol → '${guessTimeCol(train)}'   guessTargetCol → '${guessTargetCol(train)}'   (test uses timeCol='week', target=none)`);
 
-// Shared computation, exactly as runGateCompute() does on a BYO upload.
+// ── (0) AUTO-GUESS DEFAULTS — NO hand-selection; the dropdown defaults the
+//        shipped guessers produce drive the entire BYO run below. ──
+banner("(0) COLUMN AUTO-GUESS — the defaults a reviewer who accepts them gets");
+const timeCol = guessTimeCol(train);
+const targetCol = guessTargetCol(train);
+console.log(`retail:  guessTimeCol → '${timeCol}'   guessTargetCol → '${targetCol || "(none)"}'`);
+assert(timeCol === "week", "guessTimeCol defaults to 'week' (numeric cycling axis, not store_id)");
+assert(targetCol === "", "guessTargetCol defaults to (none) (no outcome column; not holiday_flag)");
+
+// Shared computation, exactly as runGateCompute() does on a BYO upload — using
+// the AUTO-GUESSED timeCol/targetCol, not hand-picked values.
 const diag = driftDiagnostic(train, val, timeCol, { exclude: new Set(targetCol ? [targetCol] : []) });
 const verdict = decideScheme(diag);
 const sharedExcl = [targetCol, timeCol].filter(Boolean);
@@ -131,6 +138,9 @@ const exTrain = parseCSV(readExample("example_train.csv")).rows;
 const exVal = parseCSV(readExample("example_val.csv")).rows;
 const exTruth = parseCSV(readExample("example_val_truth.csv")).rows;
 const exTime = guessTimeCol(exTrain), exTarget = guessTargetCol(exTrain);
+console.log(`example: guessTimeCol → '${exTime}'   guessTargetCol → '${exTarget || "(none)"}'`);
+assert(exTime === "period", "example auto-guesses time = 'period' (dense integer axis; region is a string)");
+assert(exTarget === "target", "example auto-guesses target = 'target' (real outcome present)");
 const exDiag = driftDiagnostic(exTrain, exVal, exTime, { exclude: new Set([exTarget]) });
 const exVerdict = decideScheme(exDiag);
 const exValTarget = buildValTarget(exVal, exTruth, exTarget);
