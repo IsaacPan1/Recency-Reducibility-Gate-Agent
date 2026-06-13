@@ -605,6 +605,7 @@ const state = {
   recentWindow: 14,
   nFeatures: 15,
   nPeriods: 30,
+  conceptDrift: 1, // target-map change strength; only thinEvidence sets it to 0 (no slider)
   seed: 1,
   activePreset: "recentRegimeShift", // last preset landed on (for bookmark + breadcrumb)
   // "Your data" tab
@@ -618,7 +619,8 @@ function currentParams() {
   return {
     shape: state.shape, target: state.target, magnitude: state.magnitude,
     changepoint: state.changepoint, nFeatures: state.nFeatures,
-    nPeriods: state.nPeriods, recentWindow: state.recentWindow, seed: state.seed,
+    nPeriods: state.nPeriods, recentWindow: state.recentWindow,
+    conceptDrift: state.conceptDrift, seed: state.seed,
   };
 }
 

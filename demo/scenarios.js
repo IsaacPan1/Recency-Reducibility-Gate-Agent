@@ -71,6 +71,16 @@ const DEFAULTS = {
   sigmaX: 1.0,            // covariate noise sd → the "noise-sd unit" for magnitude
   sigmaRamp: 0.8,         // noise sd under a ramp (kept distinct for tuning)
   noiseY: 0.3,
+  conceptDrift: 1.0,      // strength of the TARGET-map change across a covariate step
+                          // (scales the betas->betas2 shift). 1 = full concept drift,
+                          // so the recent window's fresh relationship genuinely beats
+                          // the regime-mixed full window on the OLS holdout. 0 = the
+                          // covariates still shift (so the gate's covariate signal is
+                          // unchanged) but the target relationship is STABLE, so a
+                          // recent window buys no real prediction gain. Used by
+                          // thinEvidence to make the n-floor's "thin signal is
+                          // unreliable" story honest: the answer key agrees that
+                          // sliding would not have helped.
   rampSlopeK: 0.1875,     // slope = magnitude * sigmaX * rampSlopeK * jitter. At the
                           // linearTrend preset (magnitude 2.4) this gives slope ≈ 0.45 /
                           // noise 0.8 — the original near-equal tuning: standardized recent
@@ -137,8 +147,11 @@ function buildTable(c, spec) {
 
 function betaPair(c, shiftBeta) {
   const betas = Array.from({ length: c.nFeatures }, () => uniform(c.rng, -1, 1));
+  // The uniform is ALWAYS drawn when shiftBeta so the RNG sequence (and therefore
+  // every other preset's data) is identical regardless of conceptDrift; the factor
+  // only scales the resulting shift. conceptDrift defaults to 1 (full drift).
   const betas2 = shiftBeta
-    ? betas.map((b) => b + uniform(c.rng, -1.5, 1.5))
+    ? betas.map((b) => b + c.conceptDrift * uniform(c.rng, -1.5, 1.5))
     : betas.slice();
   return { betas, betas2 };
 }
@@ -170,6 +183,7 @@ export function generate(params = {}) {
     nFeatures: params.nFeatures ?? DEFAULTS.nFeatures,
     nPeriods: params.nPeriods ?? DEFAULTS.nPeriods,
     recentPeriods: params.recentWindow ?? params.recentPeriods ?? DEFAULTS.recentPeriods,
+    conceptDrift: params.conceptDrift ?? DEFAULTS.conceptDrift,
     seed: params.seed ?? DEFAULTS.seed,
     timeCol: "period",
     targetCol: "y",
@@ -259,13 +273,20 @@ export function generate(params = {}) {
 //   boundaryShift→expanding (naive disagrees), seasonalOnly→expanding (naive
 //   disagrees), linearTrend→expanding (naive disagrees), thinEvidence→expanding
 //   (evidence-breadth floor).
+// Every preset carries conceptDrift (1 = full target-map change across the step;
+// see DEFAULTS.conceptDrift). thinEvidence is the lone 0: its covariates still
+// shift (so the gate's covariate signal — frac/rel/n — is unchanged and the
+// n-floor is what holds expanding), but the target relationship is STABLE, so the
+// OLS answer key shows expanding and sliding are comparable. That makes the floor
+// reading honest: it declined to slide on thin evidence, and sliding would not
+// have helped anyway.
 export const SCENARIO_PRESETS = {
-  stationary:        { shape: "step", target: "covariates",    magnitude: 0,   changepoint: 0,    nFeatures: 15, nPeriods: 30, recentWindow: 14 },
-  recentRegimeShift: { shape: "step", target: "covariates",    magnitude: 2,   changepoint: 0,    nFeatures: 15, nPeriods: 30, recentWindow: 14 },
-  boundaryShift:     { shape: "step", target: "covariates",    magnitude: 2,   changepoint: 1,    nFeatures: 15, nPeriods: 30, recentWindow: 14 },
-  linearTrend:       { shape: "ramp", target: "covariates",    magnitude: 2.4, changepoint: 0,    nFeatures: 15, nPeriods: 30, recentWindow: 14 },
-  seasonalOnly:      { shape: "step", target: "seasonal-only", magnitude: 2,   changepoint: 0,    nFeatures: 15, nPeriods: 30, recentWindow: 14 },
-  thinEvidence:      { shape: "step", target: "covariates",    magnitude: 2,   changepoint: 0,    nFeatures: 9,  nPeriods: 30, recentWindow: 14 },
+  stationary:        { shape: "step", target: "covariates",    magnitude: 0,   changepoint: 0,    nFeatures: 15, nPeriods: 30, recentWindow: 14, conceptDrift: 1 },
+  recentRegimeShift: { shape: "step", target: "covariates",    magnitude: 2,   changepoint: 0,    nFeatures: 15, nPeriods: 30, recentWindow: 14, conceptDrift: 1 },
+  boundaryShift:     { shape: "step", target: "covariates",    magnitude: 2,   changepoint: 1,    nFeatures: 15, nPeriods: 30, recentWindow: 14, conceptDrift: 1 },
+  linearTrend:       { shape: "ramp", target: "covariates",    magnitude: 2.4, changepoint: 0,    nFeatures: 15, nPeriods: 30, recentWindow: 14, conceptDrift: 1 },
+  seasonalOnly:      { shape: "step", target: "seasonal-only", magnitude: 2,   changepoint: 0,    nFeatures: 15, nPeriods: 30, recentWindow: 14, conceptDrift: 1 },
+  thinEvidence:      { shape: "step", target: "covariates",    magnitude: 2,   changepoint: 0,    nFeatures: 9,  nPeriods: 30, recentWindow: 14, conceptDrift: 0 },
 };
 
 export const SCENARIO_PRESET_INFO = {
@@ -286,6 +307,11 @@ export const SCENARIO_PRESET_ORDER = [
 // reseed keeps you "on" the preset). Used for exact-match and reset.
 export const PRESET_KEYS = [
   "shape", "target", "magnitude", "changepoint", "nFeatures", "nPeriods", "recentWindow",
+  // conceptDrift has no slider, but it is part of a preset's identity: thinEvidence
+  // (0) and recentRegimeShift (1) share every other knob, so without it sliding
+  // nFeatures 9->15 would falsely "match" recentRegimeShift while keeping
+  // conceptDrift=0. Including it keeps such off-preset configs honestly "modified".
+  "conceptDrift",
 ];
 
 // Does the current state exactly equal a preset's config (ignoring seed)?
